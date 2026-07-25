@@ -33,9 +33,8 @@ function textAfterLooseLabel(line, label) {
 
 function extractStrictTotalAmounts(text) {
   const clean = normalizeAmountText(removeDateText(text));
-  const matches = clean.match(/(?:¥|￥|RMB|CNY)?\s*(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?/gi) ?? [];
+  const matches = clean.match(/(?:¥|￥|RMB|CNY)?\s*(?:\d{1,3}(?:,\d{3})+|\d{4,})(?:\.\d{1,2})?/gi) ?? [];
   return matches
-    .filter(isLikelyTotalAmountText)
     .map((value) => Number(value.replace(/[¥￥,\s]|RMB|CNY/gi, "")))
     .filter((amount) => Number.isFinite(amount) && amount >= 1000);
 }
@@ -51,20 +50,13 @@ function normalizeOcrSource(text) {
 
 function normalizeAmountText(text) {
   return normalizeOcrSource(text)
-    .replace(/(?<=\d)\s+(?=\d)/g, "")
     .replace(/(\d{1,3})\.(\d{3})(?!\d)/g, "$1,$2");
 }
 
 function removeDateText(text) {
   return normalizeOcrSource(text)
-    .replace(/\b\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?\b/g, " ")
-    .replace(/\b\d{1,2}[-/.月]\d{1,2}日?\b/g, " ");
-}
-
-function isLikelyTotalAmountText(value) {
-  const raw = String(value).trim();
-  const digits = raw.replace(/\D/g, "");
-  return /[¥￥]|RMB|CNY/i.test(raw) || raw.includes(",") || /\.\d{1,2}$/.test(raw) || digits.length >= 4;
+    .replace(/\b\d{4}[-‐‑‒–—―−－/.年]\d{1,2}[-‐‑‒–—―−－/.月]\d{1,2}日?\b/g, " ")
+    .replace(/\b\d{1,2}[-‐‑‒–—―−－/.月]\d{1,2}日?\b/g, " ");
 }
 
 function escapeRegExp(value) {
