@@ -1,0 +1,752 @@
+:root {
+  color-scheme: light;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  background: #fff3f6;
+  color: #2a2226;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  background: #173f35;
+  color: #fff;
+  min-height: 44px;
+  padding: 0 16px;
+  font-weight: 700;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.app-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fff3f6;
+}
+
+.dashboard-shell {
+  background:
+    radial-gradient(circle at 16% 5%, rgba(255, 214, 220, 0.72) 0 34px, transparent 35px),
+    radial-gradient(circle at 82% 4%, rgba(255, 228, 171, 0.48) 0 44px, transparent 45px),
+    radial-gradient(circle at 90% 24%, rgba(255, 194, 205, 0.42) 0 38px, transparent 39px),
+    radial-gradient(circle at 16% 72%, rgba(255, 214, 220, 0.34) 0 36px, transparent 37px),
+    radial-gradient(circle at 86% 76%, rgba(255, 228, 171, 0.24) 0 46px, transparent 47px),
+    linear-gradient(180deg, #fff6f8 0%, #ffe1e8 34%, #fff3f6 68%, #fffaf5 100%);
+}
+
+.summary-band {
+  padding: 24px 18px 22px;
+  background: transparent;
+}
+
+.dashboard-board {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 18px 28px;
+  background: transparent;
+}
+
+.dashboard-board::before,
+.dashboard-board::after {
+  content: "";
+  position: absolute;
+  width: 54px;
+  height: 48px;
+  border-radius: 52% 52% 48% 48%;
+  background: rgba(255, 255, 255, 0.32);
+  pointer-events: none;
+}
+
+.dashboard-board::before {
+  right: 18px;
+  top: 88px;
+  transform: rotate(-10deg);
+}
+
+.dashboard-board::after {
+  left: -12px;
+  bottom: 84px;
+  transform: rotate(14deg);
+}
+
+.topbar,
+.section-header,
+.input-row,
+.account-actions,
+.manual-form,
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.topbar,
+.section-header {
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #60716b;
+  font-size: 13px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cad5cf;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d2523;
+  padding: 0 12px;
+}
+
+.hero-metrics {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.home-screen-hint {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  border: 1px solid rgba(201, 79, 114, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #7c2f45;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.hero-metric-card {
+  min-width: 0;
+  border: 1px solid rgba(255, 190, 203, 0.78);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 16px;
+  box-shadow: 0 12px 28px rgba(124, 47, 69, 0.08);
+}
+
+.hero-metric-card span {
+  display: block;
+  color: #7c2f45;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hero-metric-card strong {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2a2226;
+  font-size: clamp(26px, 7vw, 44px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.progress-line {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  margin-top: 34px;
+}
+
+.deposit-progress {
+  position: relative;
+  height: 16px;
+  margin: 0 20px 0 38px;
+  overflow: visible;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    inset 0 1px 2px rgba(124, 47, 69, 0.16),
+    0 8px 24px rgba(214, 79, 106, 0.16);
+}
+
+.deposit-progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff7ea1 0%, #ffd24a 100%);
+  transition: width 200ms ease;
+}
+
+.deposit-progress-marker {
+  position: absolute;
+  left: 4%;
+  top: 50%;
+  width: clamp(64px, 18vw, 82px);
+  height: auto;
+  filter: drop-shadow(0 8px 14px rgba(105, 38, 54, 0.22));
+  pointer-events: none;
+  transform: translate3d(-50%, -57%, 0);
+  transition: left 220ms ease;
+  z-index: 3;
+}
+
+.progress-percent {
+  min-width: 38px;
+  color: #7c2f45;
+  padding: 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.deposit-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 32px;
+}
+
+.deposit-stats div {
+  border: 1px solid rgba(255, 190, 203, 0.7);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 12px;
+}
+
+.deposit-stats span {
+  display: block;
+  color: #66756f;
+  font-size: 12px;
+}
+
+.deposit-stats strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+  color: #1d2523;
+  font-size: 16px;
+}
+
+.deposit-stats strong.positive {
+  color: #1f8a70;
+}
+
+.deposit-stats strong.negative {
+  color: #b84a3a;
+}
+
+.deposit-stats strong.flat {
+  color: #60716b;
+}
+
+.planning-form {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.82fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.planning-form label {
+  display: grid;
+  grid-template-rows: 18px 44px;
+  min-width: 0;
+  gap: 8px;
+  color: #495954;
+  font-size: 14px;
+}
+
+.planning-form input {
+  height: 44px;
+}
+
+.planning-form button {
+  background: #c94f72;
+  color: #fff;
+  min-height: 44px;
+}
+
+.primary-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.upload-button {
+  display: grid;
+  min-height: 52px;
+  place-items: center;
+  border-radius: 8px;
+  background: #7c2f45;
+  color: #fff;
+  font-weight: 800;
+}
+
+.primary-actions small {
+  color: #66756f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.review-section {
+  padding-top: 18px;
+}
+
+.review-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.review-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d9e1dc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+
+.review-top {
+  display: grid;
+  gap: 4px;
+}
+
+.review-title {
+  overflow-wrap: anywhere;
+  color: #1d2523;
+  font-weight: 800;
+}
+
+.review-status {
+  color: #66756f;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.review-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.review-controls label {
+  display: grid;
+  gap: 6px;
+  color: #495954;
+  font-size: 13px;
+}
+
+.review-subtotal {
+  border-radius: 8px;
+  background: #fff0f4;
+  color: #7c2f45;
+  padding: 10px 12px;
+  font-weight: 800;
+}
+
+.candidate-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.candidate-button {
+  min-height: 36px;
+  border: 1px solid #f4bfcb;
+  background: #fff;
+  color: #7c2f45;
+  padding: 0 10px;
+}
+
+.candidate-button.selected {
+  border-color: #7c2f45;
+  background: #7c2f45;
+  color: #fff;
+}
+
+.candidate-row.preferred .candidate-button {
+  border-color: #ff7ea1;
+}
+
+.candidate-row.preferred .candidate-button.selected {
+  background: #ff7ea1;
+  color: #fff;
+}
+
+.confirm-button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.metric {
+  border: 1px solid #d9e1dc;
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.metric span,
+.account-meta,
+.status,
+.metric small {
+  color: #66756f;
+  font-size: 13px;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+}
+
+.metric .delta {
+  display: block;
+  margin-top: 5px;
+  font-weight: 700;
+}
+
+.delta.positive {
+  color: #1f8a70;
+}
+
+.delta.negative {
+  color: #b84a3a;
+}
+
+.delta.flat {
+  color: #60716b;
+}
+
+.record-meta {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  color: #60716b;
+  font-size: 13px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 9px;
+  margin: 12px 0 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe7e2;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.progress-fill.cash {
+  background: #1f8a70;
+}
+
+.progress-fill.asset {
+  background: #2f6fbc;
+}
+
+.content-band {
+  padding: 20px 18px 36px;
+}
+
+.accounts-band {
+  margin-top: -1px;
+  padding-top: 18px;
+  background: transparent;
+}
+
+.accounts-heading h2 {
+  color: #7c2f45;
+}
+
+.accounts-panel {
+  border: 1px solid rgba(242, 203, 212, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 14px;
+  box-shadow: 0 12px 30px rgba(124, 47, 69, 0.07);
+}
+
+.accounts-panel summary {
+  cursor: pointer;
+  list-style: none;
+  color: #60716b;
+  font-weight: 700;
+}
+
+.accounts-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.secondary-button {
+  background: #fff0f4;
+  color: #7c2f45;
+}
+
+.account-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.account-card {
+  border: 1px solid rgba(242, 203, 212, 0.9);
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 250, 250, 0.9);
+}
+
+.account-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-title {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.amount {
+  margin-top: 12px;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.status {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.manual-form {
+  margin-top: 12px;
+}
+
+.manual-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.small-button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.danger-button {
+  background: #f1e6e3;
+  color: #8c2f24;
+}
+
+dialog {
+  width: min(92vw, 420px);
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 24px 80px rgba(20, 30, 27, 0.24);
+}
+
+dialog::backdrop {
+  background: rgba(18, 28, 25, 0.38);
+}
+
+.dialog-form {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.dialog-form label {
+  display: grid;
+  gap: 7px;
+  color: #495954;
+  font-size: 14px;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    max-width: none;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-metrics {
+    gap: 8px;
+  }
+
+  .hero-metric-card {
+    padding: 12px 10px;
+  }
+
+  .hero-metric-card span {
+    font-size: 12px;
+  }
+
+  .hero-metric-card strong {
+    font-size: clamp(21px, 7vw, 28px);
+  }
+
+  .progress-line {
+    gap: 4px;
+    margin-top: 29px;
+  }
+
+  .deposit-progress {
+    margin: 0 8px 0 20px;
+  }
+
+  .deposit-progress-marker {
+    filter: none;
+    transition: none;
+  }
+
+  .progress-percent {
+    min-width: 34px;
+    padding: 0;
+    font-size: 13px;
+  }
+
+  .deposit-stats {
+    gap: 6px;
+  }
+
+  .deposit-stats div {
+    padding: 9px 7px;
+  }
+
+  .deposit-stats span {
+    font-size: 11px;
+  }
+
+  .deposit-stats strong {
+    font-size: 13px;
+  }
+
+  .planning-form {
+    grid-template-columns: 124px 155px 46px;
+    column-gap: 14px;
+    row-gap: 8px;
+    align-items: end;
+  }
+
+  .planning-form label {
+    grid-template-rows: 16px 40px;
+    font-size: 12px;
+  }
+
+  .planning-form input {
+    min-height: 40px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+
+  .planning-form button {
+    grid-column: auto;
+    width: 46px;
+    min-height: 40px;
+    margin-left: 10px;
+    padding: 0;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .account-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .review-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .account-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 374px) {
+  .planning-form {
+    grid-template-columns: 114px 145px 42px;
+    column-gap: 10px;
+  }
+
+  .planning-form button {
+    margin-left: 0;
+  }
+}
