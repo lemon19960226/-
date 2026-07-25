@@ -150,20 +150,6 @@ select {
   margin-top: 22px;
 }
 
-.home-screen-hint {
-  position: relative;
-  z-index: 1;
-  margin-top: 14px;
-  border: 1px solid rgba(201, 79, 114, 0.28);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.68);
-  color: #7c2f45;
-  padding: 10px 12px;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.45;
-}
-
 .hero-metric-card {
   min-width: 0;
   border: 1px solid rgba(255, 190, 203, 0.78);
@@ -555,7 +541,7 @@ select {
 .account-card {
   border: 1px solid rgba(242, 203, 212, 0.9);
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px;
   background: rgba(255, 250, 250, 0.9);
 }
 
@@ -577,6 +563,12 @@ select {
   font-weight: 800;
 }
 
+.account-card > .amount,
+.account-card > .status,
+.account-card > .manual-form {
+  display: none;
+}
+
 .status {
   margin-top: 4px;
   line-height: 1.45;
@@ -593,7 +585,8 @@ select {
 
 .small-button {
   min-height: 38px;
-  padding: 0 12px;
+  padding: 0 11px;
+  white-space: nowrap;
 }
 
 .danger-button {
@@ -727,8 +720,9 @@ dialog::backdrop {
 @media (max-width: 520px) {
   .account-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
+    gap: 8px;
   }
 
   .review-controls {
@@ -737,6 +731,13 @@ dialog::backdrop {
 
   .account-header {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .small-button {
+    min-height: 36px;
+    padding: 0 4px;
+    font-size: 12px;
   }
 }
 
