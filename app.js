@@ -1,8 +1,6 @@
 const statusText = {
-  not_logged_in: "未登录",
   waiting_confirmation: "等待确认",
   success: "读取成功",
-  failed: "读取失败",
   manual_required: "需要手动录入"
 };
 
@@ -20,35 +18,27 @@ const scopeText = {
   invested: "投资资产"
 };
 
-const defaultUrls = {
-  securities: { appUrl: "", webUrl: "https://www.cs.ecitic.com/newsite/login/index.html" },
-  alipay: { appUrl: "alipays://", webUrl: "https://www.alipay.com/x/personal" },
-  bank: { appUrl: "", webUrl: "https://pbank.bankcomm.com/personbank/logon.jsp" },
-  cash: { appUrl: "", webUrl: "" },
-  other: { appUrl: "", webUrl: "" }
+const defaultShortcutNames = {
+  securities: "打开中信证券",
+  alipay: "打开支付宝",
+  bank: "打开交通银行",
+  cash: "",
+  other: ""
 };
 
 const LOCAL_STATE_KEY = "retirement-dashboard-local-state-v1";
 const LEGACY_SUMMARY_CACHE_KEY = "retirement-dashboard-summary";
 
-const yuan = new Intl.NumberFormat("zh-CN", {
-  style: "currency",
-  currency: "CNY"
-});
+const yuan = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" });
+const wholeYuan = new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY", maximumFractionDigits: 0 });
 
-const wholeYuan = new Intl.NumberFormat("zh-CN", {
-  style: "currency",
-  currency: "CNY",
-  maximumFractionDigits: 0
-});
-
-let summary = null;
 let localState = loadLocalState();
+let summary = null;
+let reviewItems = [];
 
 const planningForm = document.querySelector("#planningForm");
 const targetAmount = document.querySelector("#targetAmount");
 const retirementDate = document.querySelector("#retirementDate");
-const homeScreenHint = document.querySelector("#homeScreenHint");
 const accountList = document.querySelector("#accountList");
 const screenshotUpload = document.querySelector("#screenshotUpload");
 const uploadHint = document.querySelector("#uploadHint");
@@ -59,12 +49,38 @@ const confirmReviews = document.querySelector("#confirmReviews");
 const dialog = document.querySelector("#accountDialog");
 const dialogTitle = document.querySelector("#accountDialogTitle");
 const accountForm = document.querySelector("#accountForm");
-let reviewItems = [];
 
 registerServiceWorker();
+loadSummary();
 
 document.querySelector("#addAccount").addEventListener("click", () => openAccountDialog());
 document.querySelector("#cancelDialog").addEventListener("click", () => dialog.close());
+
+accountForm.elements.type.addEventListener("change", () => applyDefaultShortcut(accountForm.elements.type.value));
+
+planningForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveConfig({
+    targetAmount: Number(targetAmount.value),
+    retirementDate: retirementDate.value,
+    accounts: summary.accounts.map(stripAccountState)
+  });
+  loadSummary();
+});
+
+accountForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(accountForm));
+  const accountId = payload.id;
+  delete payload.id;
+
+  if (accountId) updateAccount(accountId, payload);
+  else addAccount(payload);
+
+  accountForm.reset();
+  dialog.close();
+  loadSummary();
+});
 
 screenshotUpload.addEventListener("change", async () => {
   const files = Array.from(screenshotUpload.files ?? []);
@@ -100,7 +116,7 @@ clearReviews.addEventListener("click", () => {
   renderReviews();
 });
 
-confirmReviews.addEventListener("click", async () => {
+confirmReviews.addEventListener("click", () => {
   const totalsByAccount = new Map();
   for (const item of reviewItems) {
     const itemTotal = calculateReviewTotal(item);
@@ -113,135 +129,56 @@ confirmReviews.addEventListener("click", async () => {
     return;
   }
 
-  confirmReviews.disabled = true;
-  try {
-    updateBalances(Array.from(totalsByAccount, ([accountId, amount]) => ({ accountId, amount })));
-  } finally {
-    confirmReviews.disabled = false;
-  }
+  updateBalances(Array.from(totalsByAccount, ([accountId, amount]) => ({ accountId, amount })));
   reviewItems = [];
   screenshotUpload.value = "";
   uploadHint.textContent = "已更新存款。截图和 OCR 原文没有保存。";
-  await loadSummary();
+  loadSummary();
   renderReviews();
 });
 
-accountForm.elements.type.addEventListener("change", () => {
-  applyDefaultUrls(accountForm.elements.type.value);
-});
-
-planningForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  saveConfig({
-    targetAmount: Number(targetAmount.value),
-    retirementDate: retirementDate.value,
-    accounts: summary.accounts.map(stripAccountState)
-  });
-  await loadSummary();
-});
-
-accountForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const payload = Object.fromEntries(new FormData(accountForm));
-  const accountId = payload.id;
-  delete payload.id;
-
-  if (accountId) {
-    updateAccount(accountId, payload);
-  } else {
-    addAccount(payload);
-  }
-
-  accountForm.reset();
-  dialog.close();
-  await loadSummary();
-});
-
-async function loadSummary() {
+function loadSummary() {
   summary = buildLocalSummary();
-  homeScreenHint.hidden = false;
-  homeScreenHint.textContent = "纯手机本地版：目标、账户、余额和记录都保存在当前手机浏览器里，不依赖电脑服务。";
   renderSummary(summary);
 }
 
 function renderSummary(data) {
   targetAmount.value = String(data.targetAmount);
   retirementDate.value = data.retirementDate ?? "";
-  const depositTotal = data.depositTotal ?? data.assetTotal;
-  const depositGap = data.depositGap ?? data.assetGap;
-  const depositProgress = data.depositProgress ?? data.assetProgress;
-  const depositDelta = data.depositDelta ?? data.assetDelta;
-  document.querySelector("#depositTotal").textContent = wholeYuan.format(depositTotal);
+  document.querySelector("#depositTotal").textContent = wholeYuan.format(data.depositTotal);
   document.querySelector("#targetLabel").textContent = yuan.format(data.targetAmount);
-  document.querySelector("#depositGap").textContent = yuan.format(depositGap);
-  document.querySelector("#depositPercent").textContent = `${Math.round(depositProgress * 100)}%`;
-  renderDelta("#depositDelta", depositDelta);
+  document.querySelector("#depositGap").textContent = yuan.format(data.depositGap);
+  document.querySelector("#depositPercent").textContent = `${Math.round(data.depositProgress * 100)}%`;
   document.querySelector("#currentRecordAt").textContent = `本次记录：${formatDate(data.currentRecordAt)}`;
   document.querySelector("#previousRecordAt").textContent = `上次更新：${formatDate(data.previousRecordAt)}`;
-  renderRetirement(data);
-  const progressPercent = Math.round(depositProgress * 100);
-  const markerPercent = Math.min(Math.max(progressPercent, 4), 96);
+  document.querySelector("#retirementDaysCard").textContent = data.daysUntilRetirement === null ? "待设置" : `${data.daysUntilRetirement} 天`;
+  renderDelta("#depositDelta", data.depositDelta);
+
+  const progressPercent = Math.round(data.depositProgress * 100);
   document.querySelector("#depositProgress").style.width = `${progressPercent}%`;
-  document.querySelector("#depositProgressMarker").style.left = `${markerPercent}%`;
-
+  document.querySelector("#depositProgressMarker").style.left = `${Math.min(Math.max(progressPercent, 4), 96)}%`;
   accountList.replaceChildren(...data.accounts.map(renderAccount));
-  setOnlineControls();
-}
-
-function renderRetirement(data) {
-  const days = data.daysUntilRetirement;
-  document.querySelector("#retirementDaysCard").textContent = days === null || days === undefined ? "待设置" : `${days} 天`;
 }
 
 function renderDelta(selector, value) {
   const element = document.querySelector(selector);
   element.classList.remove("positive", "negative", "flat");
-
   if (value === null || value === undefined) {
     element.textContent = "暂无";
     return;
   }
-
   if (value > 0) {
     element.textContent = `增加 ${yuan.format(value)}`;
     element.classList.add("positive");
     return;
   }
-
   if (value < 0) {
     element.textContent = `减少 ${yuan.format(Math.abs(value))}`;
     element.classList.add("negative");
     return;
   }
-
   element.textContent = "持平";
   element.classList.add("flat");
-}
-
-function setOnlineControls() {
-  planningForm.querySelectorAll("input, button").forEach((element) => {
-    element.disabled = false;
-  });
-  screenshotUpload.disabled = false;
-  document.querySelector(".upload-button").classList.remove("disabled");
-  document.querySelector("#addAccount").disabled = false;
-  accountList.querySelectorAll("button, input, select").forEach((element) => {
-    element.disabled = false;
-  });
-}
-
-function formatDate(value) {
-  if (!value) return "暂无";
-  return new Date(value).toLocaleString("zh-CN");
-}
-
-function formatDateOnly(value) {
-  if (!value) return "暂无";
-  return new Date(`${value}T00:00:00`).toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
 }
 
 function renderAccount(account) {
@@ -264,11 +201,10 @@ function renderAccount(account) {
   actions.className = "account-actions";
   actions.append(
     createButton("打开App", "small-button secondary-button", () => openSource(account)),
-    createButton("网页", "small-button secondary-button", () => openWeb(account)),
     createButton("设置", "small-button secondary-button", () => openAccountDialog(account)),
-    createButton("删除", "small-button danger-button", async () => {
+    createButton("删除", "small-button danger-button", () => {
       deleteAccount(account.id);
-      await loadSummary();
+      loadSummary();
     })
   );
 
@@ -281,7 +217,7 @@ function renderAccount(account) {
   const status = document.createElement("p");
   status.className = "status";
   const updated = account.state.updatedAt ? ` · ${new Date(account.state.updatedAt).toLocaleString("zh-CN")}` : "";
-  status.textContent = `${statusText[account.state.status]}${updated}。${account.state.message}`;
+  status.textContent = `${statusText[account.state.status] ?? "需要手动录入"}${updated}。${account.state.message}`;
 
   const manual = document.createElement("form");
   manual.className = "manual-form";
@@ -289,11 +225,11 @@ function renderAccount(account) {
     <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="输入本次余额" />
     <button type="submit">录入</button>
   `;
-  manual.addEventListener("submit", async (event) => {
+  manual.addEventListener("submit", (event) => {
     event.preventDefault();
     const form = new FormData(manual);
     updateBalances([{ accountId: account.id, amount: Number(form.get("amount")) }]);
-    await loadSummary();
+    loadSummary();
   });
 
   card.append(header, amount, status, manual);
@@ -306,13 +242,8 @@ async function recognizeReviewItem(item) {
       item.status = "OCR 未加载，请手动输入金额。";
       return;
     }
-
     const result = await window.Tesseract.recognize(item.file, "chi_sim+eng", {
       logger: (message) => {
-        if (message.status === "loading tesseract core" || message.status === "loading language traineddata") {
-          item.status = "正在加载中文识别模型...";
-          renderReviews();
-        }
         if (message.status === "recognizing text") {
           item.status = `识别中 ${Math.round((message.progress ?? 0) * 100)}%`;
           renderReviews();
@@ -321,19 +252,15 @@ async function recognizeReviewItem(item) {
     });
     item.rawText = result.data.text;
     const parsed = parseDepositAmountsFromText(item.rawText);
-    item.candidates = parsed.amounts ?? [];
-    item.preferredAmounts = parsed.preferredAmounts ?? [];
+    item.candidates = parsed.amounts;
+    item.preferredAmounts = parsed.preferredAmounts;
     const visibleAmounts = getVisibleAmounts(item);
-    item.selectedAmounts = item.preferredAmounts.length
-      ? [...item.preferredAmounts]
-      : visibleAmounts.length === 1
-        ? [visibleAmounts[0]]
-        : [];
+    item.selectedAmounts = item.preferredAmounts.length ? [...item.preferredAmounts] : visibleAmounts.length === 1 ? [visibleAmounts[0]] : [];
     item.status = item.preferredAmounts.length
       ? `优先提取到 ${item.preferredAmounts.length} 个总资产/总金额，请确认。`
       : item.candidates.length
         ? `未定位到总资产，列出 ${item.candidates.length} 个金额供确认。`
-      : "未识别到金额，请手动输入。";
+        : "未识别到金额，请手动输入。";
   } catch (error) {
     item.status = `识别失败：${error?.message ?? "请手动输入金额"}`;
   }
@@ -360,10 +287,11 @@ function renderReviewCard(item) {
 
   const candidates = document.createElement("div");
   candidates.className = "candidate-row";
-  const visibleAmounts = getVisibleAmounts(item);
-  for (const amount of visibleAmounts) {
+  for (const amount of getVisibleAmounts(item)) {
     const button = createButton(yuan.format(amount), "candidate-button", () => {
-      toggleSelectedAmount(item, amount);
+      item.selectedAmounts = item.selectedAmounts.includes(amount)
+        ? item.selectedAmounts.filter((selected) => selected !== amount)
+        : [...item.selectedAmounts, amount];
       renderReviews();
     });
     if (item.selectedAmounts.includes(amount)) button.classList.add("selected");
@@ -409,19 +337,13 @@ function renderReviewCard(item) {
   subtotal.textContent = `本张小计：${yuan.format(calculateReviewTotal(item))}`;
 
   card.append(top);
-  if (visibleAmounts.length) card.append(candidates);
+  if (getVisibleAmounts(item).length) card.append(candidates);
   card.append(controls, subtotal);
   return card;
 }
 
 function getVisibleAmounts(item) {
   return item.preferredAmounts.length ? item.preferredAmounts : item.candidates;
-}
-
-function toggleSelectedAmount(item, amount) {
-  item.selectedAmounts = item.selectedAmounts.includes(amount)
-    ? item.selectedAmounts.filter((selected) => selected !== amount)
-    : [...item.selectedAmounts, amount];
 }
 
 function calculateReviewTotal(item) {
@@ -432,27 +354,14 @@ function calculateReviewTotal(item) {
 
 function guessAccountId(fileName) {
   const name = fileName.toLowerCase();
-  const account = summary?.accounts.find((item) => {
-    const accountName = item.name.toLowerCase();
-    return name.includes(accountName) || name.includes(item.type);
-  });
+  const account = summary?.accounts.find((item) => name.includes(item.name.toLowerCase()) || name.includes(item.type));
   return account?.id ?? summary?.accounts[0]?.id ?? "";
 }
 
-async function openSource(account) {
+function openSource(account) {
   markAccountWaiting(account.id);
-  summary = buildLocalSummary();
-  renderSummary(summary);
-
-  if (account.appUrl) {
-    window.location.href = account.appUrl;
-  } else if (account.webUrl) {
-    window.open(account.webUrl, "_blank", "noopener,noreferrer");
-  }
-}
-
-function openWeb(account) {
-  if (account.webUrl) window.open(account.webUrl, "_blank", "noopener,noreferrer");
+  loadSummary();
+  if (account.appUrl) window.location.href = account.appUrl;
 }
 
 function openAccountDialog(account = null) {
@@ -463,15 +372,15 @@ function openAccountDialog(account = null) {
   accountForm.elements.type.value = account?.type ?? "securities";
   accountForm.elements.scope.value = account?.scope ?? "total";
   accountForm.elements.appUrl.value = account?.appUrl ?? "";
-  accountForm.elements.webUrl.value = account?.webUrl ?? "";
-  if (!account) applyDefaultUrls(accountForm.elements.type.value);
+  if (!account) applyDefaultShortcut(accountForm.elements.type.value);
   dialog.showModal();
 }
 
-function applyDefaultUrls(type) {
-  const urls = defaultUrls[type] ?? defaultUrls.other;
-  if (!accountForm.elements.appUrl.value) accountForm.elements.appUrl.value = urls.appUrl;
-  if (!accountForm.elements.webUrl.value) accountForm.elements.webUrl.value = urls.webUrl;
+function applyDefaultShortcut(type) {
+  const shortcutName = defaultShortcutNames[type] ?? "";
+  if (!accountForm.elements.appUrl.value && shortcutName) {
+    accountForm.elements.appUrl.value = createShortcutUrl(shortcutName);
+  }
 }
 
 function createButton(label, className, onClick) {
@@ -481,6 +390,10 @@ function createButton(label, className, onClick) {
   button.textContent = label;
   button.addEventListener("click", onClick);
   return button;
+}
+
+function createShortcutUrl(shortcutName) {
+  return `shortcuts://run-shortcut?name=${encodeURIComponent(shortcutName)}`;
 }
 
 function stripAccountState({ state, shortcutUrl, ...account }) {
@@ -495,15 +408,12 @@ function registerServiceWorker() {
 function loadLocalState() {
   try {
     const raw = localStorage.getItem(LOCAL_STATE_KEY);
-    let state = normalizeLocalState(raw ? JSON.parse(raw) : null);
-    const legacyState = loadLegacyState();
-    if ((!raw && legacyState) || (legacyState && isFreshLocalState(state))) {
-      state = legacyState;
-    }
-    if (!raw || state === legacyState) localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state));
-    return state;
+    const state = raw ? JSON.parse(raw) : loadLegacyState();
+    const normalized = normalizeLocalState(state);
+    localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(normalized));
+    return normalized;
   } catch {
-    const state = loadLegacyState() ?? normalizeLocalState(null);
+    const state = normalizeLocalState(null);
     localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(state));
     return state;
   }
@@ -513,49 +423,28 @@ function loadLegacyState() {
   try {
     const legacy = JSON.parse(localStorage.getItem(LEGACY_SUMMARY_CACHE_KEY) || "null")?.summary;
     if (!legacy?.accounts?.length) return null;
-    const config = normalizeConfig({
-      targetAmount: legacy.targetAmount,
-      retirementDate: legacy.retirementDate,
-      accounts: legacy.accounts.map(stripAccountState)
-    });
-    const session = Object.fromEntries(
-      legacy.accounts.map((account) => [
-        account.id,
-        {
-          status: account.state?.status ?? "manual_required",
-          amount: typeof account.state?.amount === "number" ? account.state.amount : null,
-          message: account.state?.message ?? "从旧版缓存迁移",
-          updatedAt: account.state?.updatedAt ?? null
-        }
-      ])
-    );
-    const records = normalizeRecords([
-      legacy.previousRecordAt
-        ? {
-            recordedAt: legacy.previousRecordAt,
-            cashTotal: Math.max((legacy.cashTotal ?? 0) - (legacy.cashDelta ?? 0), 0),
-            assetTotal: Math.max((legacy.assetTotal ?? legacy.depositTotal ?? 0) - (legacy.assetDelta ?? legacy.depositDelta ?? 0), 0)
+    return {
+      config: {
+        targetAmount: legacy.targetAmount,
+        retirementDate: legacy.retirementDate,
+        accounts: legacy.accounts.map(stripAccountState)
+      },
+      session: Object.fromEntries(
+        legacy.accounts.map((account) => [
+          account.id,
+          {
+            status: account.state?.status ?? "manual_required",
+            amount: typeof account.state?.amount === "number" ? account.state.amount : null,
+            message: account.state?.message ?? "从旧版缓存迁移",
+            updatedAt: account.state?.updatedAt ?? null
           }
-        : null,
-      legacy.currentRecordAt
-        ? {
-            recordedAt: legacy.currentRecordAt,
-            cashTotal: legacy.cashTotal ?? 0,
-            assetTotal: legacy.assetTotal ?? legacy.depositTotal ?? 0
-          }
-        : null
-    ].filter(Boolean));
-    return normalizeLocalState({ config, session, records });
+        ])
+      ),
+      records: []
+    };
   } catch {
     return null;
   }
-}
-
-function isFreshLocalState(state) {
-  return (
-    state.records.length === 0 &&
-    Object.values(state.session).every((item) => item.amount === null)
-  );
 }
 
 function saveLocalState() {
@@ -564,11 +453,13 @@ function saveLocalState() {
 
 function normalizeLocalState(input) {
   const fallback = createDefaultLocalState();
-  const source = input && typeof input === "object" ? input : {};
+  const source = input && typeof input === "object" ? input : fallback;
   const config = normalizeConfig(source.config, fallback.config);
-  const session = reconcileSession(source.session ?? fallback.session, config);
-  const records = normalizeRecords(source.records ?? fallback.records);
-  return { config, session, records };
+  return {
+    config,
+    session: reconcileSession(source.session ?? fallback.session, config),
+    records: normalizeRecords(source.records ?? [])
+  };
 }
 
 function createDefaultLocalState() {
@@ -581,11 +472,7 @@ function createDefaultLocalState() {
       createAccount({ name: "交通银行", type: "bank", scope: "cash" })
     ]
   };
-  return {
-    config,
-    session: createEmptySession(config),
-    records: []
-  };
+  return { config, session: createEmptySession(config), records: [] };
 }
 
 function saveConfig(config) {
@@ -613,7 +500,6 @@ function updateAccount(accountId, payload) {
 function deleteAccount(accountId) {
   localState.config.accounts = localState.config.accounts.filter((account) => account.id !== accountId);
   delete localState.session[accountId];
-  localState.config = normalizeConfig(localState.config, localState.config);
   localState.session = reconcileSession(localState.session, localState.config);
   saveLocalState();
 }
@@ -649,11 +535,7 @@ function recordSnapshot() {
   const nextSummary = buildLocalSummary();
   localState.records = normalizeRecords([
     ...localState.records,
-    {
-      recordedAt: new Date().toISOString(),
-      cashTotal: nextSummary.cashTotal,
-      assetTotal: nextSummary.assetTotal
-    }
+    { recordedAt: new Date().toISOString(), cashTotal: nextSummary.cashTotal, assetTotal: nextSummary.assetTotal }
   ]);
 }
 
@@ -665,13 +547,10 @@ function buildLocalSummary() {
 
 function normalizeConfig(input, fallback = createDefaultLocalState().config) {
   const source = input && typeof input === "object" ? input : {};
-  const targetAmount = toNonNegativeNumber(source.targetAmount, fallback.targetAmount);
-  const retirementDate = normalizeDate(source.retirementDate ?? fallback.retirementDate);
-  const accounts = Array.isArray(source.accounts) ? source.accounts : fallback.accounts;
   return {
-    targetAmount,
-    retirementDate,
-    accounts: ensureDefaultAccounts(accounts.map(normalizeAccount).filter(Boolean))
+    targetAmount: toNonNegativeNumber(source.targetAmount, fallback.targetAmount),
+    retirementDate: normalizeDate(source.retirementDate ?? fallback.retirementDate),
+    accounts: ensureDefaultAccounts((Array.isArray(source.accounts) ? source.accounts : fallback.accounts).map(normalizeAccount).filter(Boolean))
   };
 }
 
@@ -681,28 +560,27 @@ function createAccount(account) {
 
 function normalizeAccount(account) {
   const type = Object.hasOwn(typeText, account?.type) ? account.type : "other";
-  const scope = Object.hasOwn(scopeText, account?.scope) ? account.scope : (type === "securities" ? "total" : "cash");
+  const scope = Object.hasOwn(scopeText, account?.scope) ? account.scope : type === "securities" ? "total" : "cash";
   return {
     id: typeof account?.id === "string" && account.id.trim() ? account.id : crypto.randomUUID(),
     name: typeof account?.name === "string" && account.name.trim() ? account.name.trim() : "未命名账户",
     type,
     scope,
-    appUrl: normalizeAppUrl(account?.appUrl, defaultUrls[type]?.appUrl ?? ""),
-    webUrl: normalizeWebUrl(account?.webUrl ?? account?.loginUrl, defaultUrls[type]?.webUrl ?? ""),
+    appUrl: normalizeAppUrl(account?.appUrl, createDefaultAppUrl(account, type)),
+    webUrl: "",
     enabled: account?.enabled !== false
   };
 }
 
-function normalizeWebUrl(value, fallback = "") {
-  const raw = typeof value === "string" ? value.trim() : "";
-  const candidate = raw || fallback;
-  if (!candidate) return "";
-  try {
-    const url = new URL(candidate);
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
-  } catch {
-    return "";
-  }
+function createDefaultAppUrl(account, type) {
+  const currentUrl = typeof account?.appUrl === "string" ? account.appUrl.trim() : "";
+  if (currentUrl && currentUrl !== "alipays://") return currentUrl;
+  const accountName = typeof account?.name === "string" ? account.name.trim() : "";
+  if (accountName === "中信证券") return createShortcutUrl("打开中信证券");
+  if (accountName === "交通银行") return createShortcutUrl("打开交通银行");
+  if (accountName === "支付宝") return createShortcutUrl("打开支付宝");
+  const shortcutName = defaultShortcutNames[type] ?? "";
+  return shortcutName ? createShortcutUrl(shortcutName) : "";
 }
 
 function normalizeAppUrl(value, fallback = "") {
@@ -719,15 +597,9 @@ function normalizeAppUrl(value, fallback = "") {
 
 function ensureDefaultAccounts(accounts) {
   const next = [...accounts];
-  if (!next.some((account) => account.type === "securities")) {
-    next.push(createAccount({ name: "中信证券", type: "securities", scope: "total" }));
-  }
-  if (!next.some((account) => account.type === "alipay")) {
-    next.push(createAccount({ name: "支付宝", type: "alipay", scope: "cash" }));
-  }
-  if (!next.some((account) => account.type === "bank" && account.name === "交通银行")) {
-    next.push(createAccount({ name: "交通银行", type: "bank", scope: "cash" }));
-  }
+  if (!next.some((account) => account.type === "securities")) next.push(createAccount({ name: "中信证券", type: "securities", scope: "total" }));
+  if (!next.some((account) => account.type === "alipay")) next.push(createAccount({ name: "支付宝", type: "alipay", scope: "cash" }));
+  if (!next.some((account) => account.type === "bank" && account.name === "交通银行")) next.push(createAccount({ name: "交通银行", type: "bank", scope: "cash" }));
   return next;
 }
 
@@ -735,12 +607,7 @@ function createEmptySession(config) {
   return Object.fromEntries(
     config.accounts.map((account) => [
       account.id,
-      {
-        status: "manual_required",
-        amount: null,
-        message: "等待手动录入或截图识别",
-        updatedAt: null
-      }
+      { status: "manual_required", amount: null, message: "等待手动录入或截图识别", updatedAt: null }
     ])
   );
 }
@@ -749,12 +616,7 @@ function reconcileSession(session, config) {
   return Object.fromEntries(
     config.accounts.map((account) => [
       account.id,
-      session?.[account.id] ?? {
-        status: "manual_required",
-        amount: null,
-        message: "等待手动录入或截图识别",
-        updatedAt: null
-      }
+      session?.[account.id] ?? { status: "manual_required", amount: null, message: "等待手动录入或截图识别", updatedAt: null }
     ])
   );
 }
@@ -773,7 +635,6 @@ function calculateSummary(config, session, options = {}) {
     }
     return {
       ...account,
-      shortcutUrl: "",
       state: {
         status: statusText[state.status] ? state.status : "manual_required",
         amount,
@@ -793,14 +654,8 @@ function calculateSummary(config, session, options = {}) {
     currentRecordAt: options.currentRecord?.recordedAt ?? null,
     previousRecordAt: options.previousRecord?.recordedAt ?? null,
     depositDelta: calculateDelta(depositTotal, options.previousRecord?.assetTotal),
-    cashDelta: calculateDelta(cashTotal, options.previousRecord?.cashTotal),
-    assetDelta: calculateDelta(assetTotal, options.previousRecord?.assetTotal),
     depositProgress: ratio(depositTotal, config.targetAmount),
-    cashProgress: ratio(cashTotal, config.targetAmount),
-    assetProgress: ratio(assetTotal, config.targetAmount),
     depositGap: Math.max(config.targetAmount - depositTotal, 0),
-    cashGap: Math.max(config.targetAmount - cashTotal, 0),
-    assetGap: Math.max(config.targetAmount - assetTotal, 0),
     accounts
   };
 }
@@ -819,22 +674,12 @@ function normalizeRecords(input) {
 function parseDepositAmountsFromText(text) {
   const amounts = parseAmountsFromText(text);
   const preferredAmounts = extractPreferredAmounts(text);
-  return {
-    amounts,
-    preferredAmounts,
-    status: preferredAmounts.length ? "preferred" : amounts.length === 1 ? "single" : amounts.length > 1 ? "multiple" : "none"
-  };
+  return { amounts, preferredAmounts };
 }
 
 function parseAmountsFromText(text) {
   const matches = (typeof text === "string" ? text : "").match(amountPattern()) ?? [];
-  return [
-    ...new Set(
-      matches
-        .map((match) => Number(match.replace(/[¥￥,\s]|RMB|CNY/gi, "")))
-        .filter((amount) => Number.isFinite(amount) && amount >= 0)
-    )
-  ];
+  return [...new Set(matches.map((match) => Number(match.replace(/[¥￥,\s]|RMB|CNY/gi, ""))).filter((amount) => Number.isFinite(amount) && amount >= 0))];
 }
 
 function extractPreferredAmounts(text) {
@@ -878,6 +723,11 @@ function calculateDaysUntil(dateValue) {
   return Math.max(Math.ceil((target.getTime() - current.getTime()) / 86400000), 0);
 }
 
+function formatDate(value) {
+  if (!value) return "暂无";
+  return new Date(value).toLocaleString("zh-CN");
+}
+
 function toNonNegativeNumber(value, fallback = 0) {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : fallback;
@@ -890,5 +740,3 @@ function ratio(value, target) {
 function calculateDelta(currentValue, previousValue) {
   return typeof previousValue === "number" && Number.isFinite(previousValue) ? currentValue - previousValue : null;
 }
-
-loadSummary();
