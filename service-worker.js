@@ -1,9 +1,10 @@
-const CACHE_NAME = "retirement-dashboard-v8";
+const CACHE_NAME = "retirement-dashboard-v9";
 const APP_SHELL = [
   "./",
   "index.html",
   "styles.css",
-  "app-mixed-launch.js?v=3",
+  "ocr-date-fix.js?v=1",
+  "app-mixed-launch.js?v=4",
   "manifest.webmanifest",
   "assets/app-icon-180.png",
   "assets/app-icon-192.png",
