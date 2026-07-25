@@ -1,9 +1,9 @@
-const CACHE_NAME = "retirement-dashboard-v5";
+const CACHE_NAME = "retirement-dashboard-v6";
 const APP_SHELL = [
   "./",
   "index.html",
   "styles.css",
-  "app-shortcut.js?v=1",
+  "app-mixed-launch.js?v=1",
   "manifest.webmanifest",
   "assets/app-icon-180.png",
   "assets/app-icon-192.png",
@@ -34,5 +34,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
+  );
 });
