@@ -20,9 +20,6 @@
             <h1>我的退休进度</h1>
           </div>
         </div>
-
-        <div id="homeScreenHint" class="home-screen-hint" style="display: none !important" hidden></div>
-
         <div class="hero-metrics">
           <article class="hero-metric-card">
             <span>存款</span>
@@ -135,12 +132,8 @@
           </select>
         </label>
         <label>
-          App 跳转链接
-          <input name="appUrl" placeholder="例如 alipays://" />
-        </label>
-        <label>
-          网页兜底链接
-          <input name="webUrl" type="url" placeholder="例如 https://www.alipay.com/x/personal" />
+          快捷指令链接
+          <input name="appUrl" placeholder="例如 shortcuts://run-shortcut?name=打开中信证券" />
         </label>
         <div class="dialog-actions">
           <button value="cancel" type="button" id="cancelDialog" class="secondary-button">取消</button>
@@ -150,6 +143,54 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script src="app.js?v=local-mobile-1" type="module"></script>
+    <script src="app.js?v=shortcut-launch-1" type="module"></script>
+    <script type="module">
+      const localStateKey = "retirement-dashboard-local-state-v1";
+      const shortcutUrl = (name) => `shortcuts://run-shortcut?name=${encodeURIComponent(name)}`;
+      const accountShortcuts = [
+        { match: (account) => account.name === "中信证券" || account.type === "securities", name: "打开中信证券" },
+        { match: (account) => account.name === "支付宝" || account.type === "alipay", name: "打开支付宝" },
+        { match: (account) => account.name === "交通银行" || account.type === "bank", name: "打开交通银行" }
+      ];
+
+      function patchShortcutAccounts() {
+        try {
+          const state = JSON.parse(localStorage.getItem(localStateKey) || "null");
+          if (!state?.config?.accounts?.length) return false;
+          let changed = false;
+          state.config.accounts = state.config.accounts.map((account) => {
+            const shortcut = accountShortcuts.find((item) => item.match(account));
+            if (!shortcut) return account;
+            const nextUrl = shortcutUrl(shortcut.name);
+            if (account.appUrl === nextUrl) return account;
+            changed = true;
+            return { ...account, appUrl: nextUrl };
+          });
+          if (changed) localStorage.setItem(localStateKey, JSON.stringify(state));
+          return changed;
+        } catch {
+          return false;
+        }
+      }
+
+      function tidyShortcutUi() {
+        document.querySelectorAll(".account-actions button").forEach((button) => {
+          if (button.textContent.trim() === "网页") button.remove();
+        });
+        document.querySelectorAll(".dialog-form label").forEach((label) => {
+          const text = label.childNodes[0]?.textContent?.trim();
+          if (text === "App 跳转链接") label.childNodes[0].textContent = "快捷指令链接";
+          if (text === "网页兜底链接") label.remove();
+        });
+      }
+
+      const changed = patchShortcutAccounts();
+      tidyShortcutUi();
+      new MutationObserver(tidyShortcutUi).observe(document.body, { childList: true, subtree: true });
+      if (changed && sessionStorage.getItem("shortcut-launch-patched") !== "1") {
+        sessionStorage.setItem("shortcut-launch-patched", "1");
+        setTimeout(() => window.location.reload(), 80);
+      }
+    </script>
   </body>
 </html>
