@@ -15,62 +15,138 @@
   <body>
     <main class="app-shell dashboard-shell">
       <section class="summary-band dashboard-board">
-        <div class="topbar"><div><h1>我的退休进度</h1></div></div>
-        <div class="hero-metrics"><article class="hero-metric-card"><span>存款</span><strong id="depositTotal">¥0</strong></article><article class="hero-metric-card"><span>离退休还有</span><strong id="retirementDaysCard">待设置</strong></article></div>
-        <div class="progress-line"><div class="deposit-progress"><div id="depositProgress" class="deposit-progress-fill"></div><img id="depositProgressMarker" class="deposit-progress-marker" src="assets/progress-mascot.png" alt="" aria-hidden="true" /></div><strong id="depositPercent" class="progress-percent">0%</strong></div>
-        <div class="deposit-stats"><div><span>目标</span><strong id="targetLabel">¥0.00</strong></div><div><span>还差</span><strong id="depositGap">¥0.00</strong></div><div><span>较上次</span><strong id="depositDelta">暂无</strong></div></div>
-        <div class="record-meta"><span id="currentRecordAt">本次记录：暂无</span><span id="previousRecordAt">上次更新：暂无</span></div>
-        <form id="planningForm" class="planning-form"><label>目标金额<input id="targetAmount" name="targetAmount" type="number" min="0" step="100" inputmode="decimal" /></label><label>退休日期<input id="retirementDate" name="retirementDate" type="date" /></label><button type="submit">保存</button></form>
-        <div class="primary-actions"><label class="upload-button" for="screenshotUpload">上传截图更新存款</label><input id="screenshotUpload" type="file" accept="image/*" multiple hidden /><small id="uploadHint">可一次选择多张截图。识别后请确认金额和账户，再更新存款。</small></div>
+        <div class="topbar">
+          <div>
+            <h1>我的退休进度</h1>
+          </div>
+        </div>
+        <div class="hero-metrics">
+          <article class="hero-metric-card">
+            <span>存款</span>
+            <strong id="depositTotal">¥0</strong>
+          </article>
+          <article class="hero-metric-card">
+            <span>离退休还有</span>
+            <strong id="retirementDaysCard">待设置</strong>
+          </article>
+        </div>
+
+        <div class="progress-line">
+          <div class="deposit-progress">
+            <div id="depositProgress" class="deposit-progress-fill"></div>
+            <img
+              id="depositProgressMarker"
+              class="deposit-progress-marker"
+              src="assets/progress-mascot.png"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+          <strong id="depositPercent" class="progress-percent">0%</strong>
+        </div>
+
+        <div class="deposit-stats">
+          <div>
+            <span>目标</span>
+            <strong id="targetLabel">¥0.00</strong>
+          </div>
+          <div>
+            <span>还差</span>
+            <strong id="depositGap">¥0.00</strong>
+          </div>
+          <div>
+            <span>较上次</span>
+            <strong id="depositDelta">暂无</strong>
+          </div>
+        </div>
+
+        <div class="record-meta">
+          <span id="currentRecordAt">本次记录：暂无</span>
+          <span id="previousRecordAt">上次更新：暂无</span>
+        </div>
+
+        <form id="planningForm" class="planning-form">
+          <label>
+            目标金额
+            <input id="targetAmount" name="targetAmount" type="number" min="0" step="100" inputmode="decimal" />
+          </label>
+          <label>
+            退休日期
+            <input id="retirementDate" name="retirementDate" type="date" />
+          </label>
+          <button type="submit">保存</button>
+        </form>
+
+        <div class="primary-actions">
+          <label class="upload-button" for="screenshotUpload">上传截图更新存款</label>
+          <input id="screenshotUpload" type="file" accept="image/*" multiple hidden />
+          <small id="uploadHint">可一次选择多张截图。识别后请确认金额和账户，再更新存款。</small>
+        </div>
       </section>
-      <section id="reviewSection" class="content-band review-section" hidden><div class="section-header"><h2>识别结果</h2><button id="clearReviews" class="secondary-button" type="button">清空</button></div><div id="reviewList" class="review-list"></div><button id="confirmReviews" class="confirm-button" type="button">确认更新存款</button></section>
-      <section class="content-band accounts-band"><div class="section-header accounts-heading"><h2>账户明细</h2><button id="addAccount" class="secondary-button" type="button">添加账户</button></div><details class="accounts-panel"><summary>展开账户</summary><div id="accountList" class="account-list"></div></details></section>
+
+      <section id="reviewSection" class="content-band review-section" hidden>
+        <div class="section-header">
+          <h2>识别结果</h2>
+          <button id="clearReviews" class="secondary-button" type="button">清空</button>
+        </div>
+        <div id="reviewList" class="review-list"></div>
+        <button id="confirmReviews" class="confirm-button" type="button">确认更新存款</button>
+      </section>
+
+      <section class="content-band accounts-band">
+        <div class="section-header accounts-heading">
+          <h2>账户明细</h2>
+          <button id="addAccount" class="secondary-button" type="button">添加账户</button>
+        </div>
+        <details class="accounts-panel">
+          <summary>展开账户</summary>
+          <div id="accountList" class="account-list"></div>
+        </details>
+      </section>
     </main>
-    <dialog id="accountDialog"><form id="accountForm" method="dialog" class="dialog-form"><h2 id="accountDialogTitle">添加账户</h2><input name="id" type="hidden" /><label>名称<input name="name" required maxlength="24" placeholder="例如 招商银行" /></label><label>类型<select name="type"><option value="securities">证券</option><option value="alipay">支付宝</option><option value="bank">银行</option><option value="cash">现金</option><option value="other">其他</option></select></label><label>统计口径<select name="scope"><option value="cash">现金余额</option><option value="total">总资产</option><option value="invested">投资资产</option></select></label><label>直接App链接<input name="directAppUrl" placeholder="例如 alipays://" /></label><label>快捷指令链接<input name="shortcutUrl" placeholder="例如 shortcuts://run-shortcut?name=打开中信证券" /></label><div class="dialog-actions"><button value="cancel" type="button" id="cancelDialog" class="secondary-button">取消</button><button value="default" type="submit">保存</button></div></form></dialog>
+
+    <dialog id="accountDialog">
+      <form id="accountForm" method="dialog" class="dialog-form">
+        <h2 id="accountDialogTitle">添加账户</h2>
+        <input name="id" type="hidden" />
+        <label>
+          名称
+          <input name="name" required maxlength="24" placeholder="例如 招商银行" />
+        </label>
+        <label>
+          类型
+          <select name="type">
+            <option value="securities">证券</option>
+            <option value="alipay">支付宝</option>
+            <option value="bank">银行</option>
+            <option value="cash">现金</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+        <label>
+          统计口径
+          <select name="scope">
+            <option value="cash">现金余额</option>
+            <option value="total">总资产</option>
+            <option value="invested">投资资产</option>
+          </select>
+        </label>
+        <label>
+          直接App链接
+          <input name="directAppUrl" placeholder="例如 alipays://" />
+        </label>
+        <label>
+          快捷指令链接
+          <input name="shortcutUrl" placeholder="例如 shortcuts://run-shortcut?name=打开中信证券" />
+        </label>
+        <div class="dialog-actions">
+          <button value="cancel" type="button" id="cancelDialog" class="secondary-button">取消</button>
+          <button value="default" type="submit">保存</button>
+        </div>
+      </form>
+    </dialog>
+
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script>
-      async function enhanceOcrImage(input) {
-        try {
-          if (!(input instanceof Blob) || !window.createImageBitmap) return input;
-          const bitmap = await createImageBitmap(input);
-          const scale = Math.min(Math.max(1600 / Math.min(bitmap.width, bitmap.height), 1.35), 2.2);
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(bitmap.width * scale);
-          canvas.height = Math.round(bitmap.height * scale);
-          const context = canvas.getContext("2d", { willReadFrequently: true });
-          context.imageSmoothingEnabled = true;
-          context.imageSmoothingQuality = "high";
-          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imageData.data;
-          for (let index = 0; index < data.length; index += 4) {
-            const gray = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
-            const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 128));
-            data[index] = contrasted;
-            data[index + 1] = contrasted;
-            data[index + 2] = contrasted;
-          }
-          context.putImageData(imageData, 0, 0);
-          return canvas;
-        } catch {
-          return input;
-        }
-      }
-      const patchTimer = setInterval(() => {
-        if (!window.Tesseract || window.Tesseract.__depositPatched) return;
-        const originalRecognize = window.Tesseract.recognize.bind(window.Tesseract);
-        window.Tesseract.recognize = async (image, langs, options = {}) => {
-          const enhancedImage = await enhanceOcrImage(image);
-          return originalRecognize(enhancedImage, langs, {
-            ...options,
-            tessedit_pageseg_mode: options.tessedit_pageseg_mode || "6",
-            preserve_interword_spaces: "1"
-          });
-        };
-        window.Tesseract.__depositPatched = true;
-        clearInterval(patchTimer);
-      }, 50);
-    </script>
-    <script src="app-mixed-launch.js?v=2" type="module"></script>
+    <script src="app-mixed-launch.js?v=3" type="module"></script>
   </body>
 </html>
