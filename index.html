@@ -16,10 +16,7 @@
     <main class="app-shell dashboard-shell">
       <section class="summary-band dashboard-board">
         <div class="topbar"><div><h1>我的退休进度</h1></div></div>
-        <div class="hero-metrics">
-          <article class="hero-metric-card"><span>存款</span><strong id="depositTotal">¥0</strong></article>
-          <article class="hero-metric-card"><span>离退休还有</span><strong id="retirementDaysCard">待设置</strong></article>
-        </div>
+        <div class="hero-metrics"><article class="hero-metric-card"><span>存款</span><strong id="depositTotal">¥0</strong></article><article class="hero-metric-card"><span>离退休还有</span><strong id="retirementDaysCard">待设置</strong></article></div>
         <div class="progress-line"><div class="deposit-progress"><div id="depositProgress" class="deposit-progress-fill"></div><img id="depositProgressMarker" class="deposit-progress-marker" src="assets/progress-mascot.png" alt="" aria-hidden="true" /></div><strong id="depositPercent" class="progress-percent">0%</strong></div>
         <div class="deposit-stats"><div><span>目标</span><strong id="targetLabel">¥0.00</strong></div><div><span>还差</span><strong id="depositGap">¥0.00</strong></div><div><span>较上次</span><strong id="depositDelta">暂无</strong></div></div>
         <div class="record-meta"><span id="currentRecordAt">本次记录：暂无</span><span id="previousRecordAt">上次更新：暂无</span></div>
@@ -31,6 +28,6 @@
     </main>
     <dialog id="accountDialog"><form id="accountForm" method="dialog" class="dialog-form"><h2 id="accountDialogTitle">添加账户</h2><input name="id" type="hidden" /><label>名称<input name="name" required maxlength="24" placeholder="例如 招商银行" /></label><label>类型<select name="type"><option value="securities">证券</option><option value="alipay">支付宝</option><option value="bank">银行</option><option value="cash">现金</option><option value="other">其他</option></select></label><label>统计口径<select name="scope"><option value="cash">现金余额</option><option value="total">总资产</option><option value="invested">投资资产</option></select></label><label>直接App链接<input name="directAppUrl" placeholder="例如 alipays://" /></label><label>快捷指令链接<input name="shortcutUrl" placeholder="例如 shortcuts://run-shortcut?name=打开中信证券" /></label><div class="dialog-actions"><button value="cancel" type="button" id="cancelDialog" class="secondary-button">取消</button><button value="default" type="submit">保存</button></div></form></dialog>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script src="app-mixed-launch.js?v=1" type="module"></script>
+    <script src="app-mixed-launch.js?v=2" type="module"></script>
   </body>
 </html>
