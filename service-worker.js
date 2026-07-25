@@ -1,4 +1,4 @@
-const CACHE_NAME = "retirement-dashboard-v13";
+const CACHE_NAME = "retirement-dashboard-v14";
 const APP_SHELL = [
   "./",
   "index.html",
