@@ -1,9 +1,9 @@
-const CACHE_NAME = "retirement-dashboard-v3";
+const CACHE_NAME = "retirement-dashboard-v4";
 const APP_SHELL = [
   "./",
   "index.html",
   "styles.css",
-  "app.js?v=local-mobile-1",
+  "app.js?v=shortcut-launch-1",
   "manifest.webmanifest",
   "assets/app-icon-180.png",
   "assets/app-icon-192.png",
